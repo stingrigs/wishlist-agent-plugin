@@ -486,6 +486,55 @@ test("the workflow installs what each job runs, and the validator's install runs
   assert.doesNotMatch(workflow, /uses: [^@\n]+@(?![0-9a-f]{40})/u, "every action is pinned by SHA");
 });
 
+test("pictures are looked for by default when a wish is created, and a wide picture is preferred", () => {
+  const read = (name) => readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8");
+  const description = (text) => /^description: (.*)$/mu.exec(text)[1];
+  const wishlist = read("wishlist");
+  const photos = read("wishlist-add-photos");
+  const links = read("wishlist-add-from-links");
+
+  // The skill is picked up when a wish is created, not only on «add a photo», and every description fits the 1024 characters a skill description may have.
+  for (const name of ["wishlist", "wishlist-add-from-links", "wishlist-add-photos", "wishlist-price-check"]) assert.ok(description(read(name)).length <= 1024, `${name}: the description is too long`);
+  assert.match(description(photos), /^Use whenever you create a wish about a place, a product or a gift/u);
+  assert.match(description(photos), /do not ask «add a photo\?» first/u);
+  assert.match(description(wishlist), /pictures are looked for by default when a wish is created/u);
+  assert.match(description(links), /taking up to three pictures from the page for each wish/u);
+
+  // The rule itself: look first, pass the addresses to the same create_wish, do not ask; the three ways to skip; what to do when nothing is found.
+  for (const [name, text] of [["wishlist", wishlist], ["wishlist-add-photos", photos]]) {
+    assert.match(text, /look for (?:1 to 3 pictures first|the pictures first)/u, `${name}: look first`);
+    assert.match(text, /Do not ask «add a photo\?»/u, `${name}: do not ask`);
+    assert.match(text, /`image_urls` of the same `create_wish`/u, `${name}: the same create_wish`);
+    assert.match(text, /a plain thing named in a few words with no brand, model or place \(a book, socks\)/u, `${name}: the plain-thing exception`);
+    assert.match(text, /no browsing tool/u, `${name}: no browsing tool`);
+    assert.match(text, /asked for no pictures|said no pictures/u, `${name}: the person asked for none`);
+    assert.match(text, /say so in one sentence and offer to add one later \(with `add_wish_photos` if the connection offers it, otherwise in the bot\)/u, `${name}: nothing found`);
+  }
+  assert.match(links, /\*\*Pictures by default:\*\*/u);
+  assert.match(links, /do not ask whether to add pictures/u);
+  assert.match(links, /\*\*One wish\*\* \(one link, or one name\)/u);
+  assert.match(links, /\*\*Two or more wishes at once:\*\*/u);
+  assert.match(links, /with no brand, model or place \(a book, socks\)/u);
+  // The old rule that a place or a product needs no picture unless asked is gone from every skill.
+  for (const text of [wishlist, photos, links]) assert.doesNotMatch(text, /needs none unless they ask/u);
+
+  // The shape: a 16:9 card, numbers, what to drop, never the only suitable one, judged from declared sizes.
+  const shape = photos.slice(photos.indexOf("## Shape: prefer a wide picture"), photos.indexOf("## How far you go"));
+  for (const [label, pattern] of [
+    ["the 16:9 card", /16:9 preview \(960×540\)/u],
+    ["the ratio", /about 1\.5:1 to 2:1/u],
+    ["the width", /about 1200 pixels or more/u],
+    ["shape never widens the search", /it never starts a second round and never widens the search/u],
+    ["square or unknown is neutral", /A square picture, or one whose page declares no size, is neutral/u],
+    ["vertical and extreme shapes", /Drop a vertical picture, and a very narrow or very long one/u],
+    ["the extreme example", /for example 21:1/u],
+    ["the only suitable one", /Never refuse the only suitable picture/u],
+    ["declared sizes", /`og:image:width` and `og:image:height`, `srcset`/u],
+    ["no download", /never by fetching the picture/u],
+    ["the best first", /Put the best wide picture first/u],
+  ]) assert.match(shape, pattern, `the shape rule must say: ${label}`);
+});
+
 test("the photo skill says in numbers how far it goes", () => {
   // The loop of the photo skill is small on purpose: every limit is a number in the text, so a model cannot read it as a hint.
   const skill = readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8");

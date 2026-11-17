@@ -1,6 +1,6 @@
 ---
 name: wishlist-add-photos
-description: Use when the person asks for a photo or pictures on a wish (a new one, or one already on the list), or a new wish is a place, a product or a gift where a picture helps. Finds picture addresses with your own browsing tool, looks at them and keeps only the ones that fit (a small search with hard limits), and gives them to create_wish, or to add_wish_photos for a wish that exists when the connection offers it. Reads a public Instagram profile only as a logged-out visitor in a real browser, never logs in. Never uses Facebook, Pinterest or any page behind a login.
+description: Use whenever you create a wish about a place, a product or a gift (a restaurant, a hotel, a trip, something to buy), and whenever the person asks for a photo or pictures on a wish (a new one, or one already on the list). Look for 1 to 3 pictures first with your own browsing tool (a small search with hard limits), keep only the ones that fit, prefer a wide one close to 16:9, and give them to the same create_wish, or to add_wish_photos for a wish that exists when the connection offers it; do not ask «add a photo?» first. Reads a public Instagram profile only as a logged-out visitor in a real browser, never logs in. Never uses Facebook, Pinterest or any page behind a login.
 license: MIT
 metadata:
   scope: pictures for the person's own wishes, by address
@@ -20,7 +20,8 @@ Read the `wishlist` skill first: its rules (the words, how to write a wish, copi
 
 ## When
 
-- The person asks for a photo or pictures, on a new wish or on one that is already there ("add a photo to the wish X"), or the wish is a place (a restaurant, a hotel, a trip), a product or a gift, where a picture helps the person remember what it is. A plain thing named in a few words (a book, socks) needs none unless they ask.
+- **By default, when you create a wish about a place** (a restaurant, a hotel, a trip), **a product or a gift**: look for the pictures first and put them in the `image_urls` of the same `create_wish`. **Do not ask «add a photo?» and do not wait to be asked.** Also when the person asks for a photo or pictures, on a new wish or on one that is already there ("add a photo to the wish X").
+- **Skip pictures** only when the wish is a plain thing named in a few words (a book, socks) and they did not ask, when you have no browsing tool (make the wish and say so), or when the person asked for no pictures. When the search finds none that fit, make the wish, say so in one sentence and offer to add one later.
 - Inside `wishlist-add-from-links`: for each new wish, if the page you read for it has good pictures, use this skill and give the addresses to that same `create_wish`.
 
 ## Where to look, in order
@@ -62,6 +63,10 @@ Take an address only if **all** of these hold. Judge from the page itself (the d
 - it holds no secret or personal data: no token, signature, session, `expires`, email or user id, in the query **or in the path**, because such an address expires or exposes something<!-- zip-omit --> (**except an Instagram picture address from the profile or post the person gave, above: a host ending in `.cdninstagram.com` or `.fbcdn.net`, taken from that page**)<!-- /zip-omit -->. A plain size or version parameter (`?w=1200`, `?v=3`) is harmless;
 - it is not taken from a page you can see only because the person is signed in (an album, an order page, an intranet): only pages anyone can open;
 - it is not a `data:` address, and it is at most 2048 characters, kept **exactly as the page gave it**.
+
+## Shape: prefer a wide picture
+
+The card in the bot shows a 16:9 preview (960×540), so among the candidates that pass the rules above **prefer a horizontal picture close to 16:9**: a ratio of about 1.5:1 to 2:1 and a width of about 1280 pixels or more. **Drop a vertical picture, and a very narrow or very long one** (Telegram refuses extreme shapes, for example 21:1), **when a better one exists. Never refuse the only suitable picture** because of its shape. Judge the shape from the sizes the page declares (`width` and `height`, `og:image:width` and `og:image:height`, `srcset`), never by fetching the picture. Put the best wide picture first: the first one that arrives becomes the main picture.
 
 ## How far you go: a small loop with hard limits
 

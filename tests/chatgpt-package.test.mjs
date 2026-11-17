@@ -391,7 +391,7 @@ test("no file of the ZIP names Instagram, and the full skill still does", () => 
     assert.equal(inZip, readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8"), `${name} must not change in the ZIP`);
   }
   const cut = entries.find((e) => e.name === "skills/wishlist-add-photos/SKILL.md").bytes.toString("utf8");
-  for (const kept of ["## Which addresses count", "## How far you go", "add_wish_photos", "Never uses Facebook, Pinterest or any page behind a login."]) assert.ok(cut.includes(kept), `the ZIP's photo skill must keep: ${kept}`);
+  for (const kept of ["## Which addresses count", "## Shape: prefer a wide picture", "Do not ask «add a photo?»", "## How far you go", "add_wish_photos", "Never uses Facebook, Pinterest or any page behind a login."]) assert.ok(cut.includes(kept), `the ZIP's photo skill must keep: ${kept}`);
   // The small loop with hard limits and the stop rule are the same words as in the full skill.
   for (const pattern of [/at most 8 (?:distinct )?candidates/iu, /at most 2 rounds/iu, /no address (?:is )?looked at twice/iu, /stop after the second round/iu, /never a third round/iu]) assert.match(cut, pattern);
   assert.ok(!cut.includes("## Instagram"));

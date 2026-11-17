@@ -14,7 +14,7 @@
     "package:chatgpt": "node scripts/package-chatgpt.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:release": "node scripts/check-release.mjs",
-    "validate:claude": "claude plugin validate --strict ./plugin && claude plugin validate --strict .claude-plugin/marketplace.json",
+    "validate:claude": "claude plugin validate --strict ./plugin && claude plugin validate --strict ./plugin-en && claude plugin validate --strict .claude-plugin/marketplace.json",
     "verify": "pnpm test && pnpm check && pnpm package:chatgpt && pnpm validate:claude"
   },
   "devDependencies": {

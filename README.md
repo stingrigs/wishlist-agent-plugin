@@ -1,16 +1,19 @@
-# Wishlist plugin for AI assistants
+# Плагін Wishlist для ШІ-асистентів
 
-Wishlist is a private wish list in Telegram. This plugin lets an AI assistant (Claude, Codex or ChatGPT) read and change
-**your own** wishes and collections when you ask it to: «Show my wishes», «Add a wish: a coffee grinder, with this link»,
-«Put it in my Birthday collection».
+[English](README.en.md)
 
-**Install:** pick your assistant in [plugin/README.md](plugin/README.md): ChatGPT, Claude Code or Codex. This is an early version: you need Telegram and the
-[Wishlist bot](https://t.me/wishlist4ubot), and connecting is currently open to a limited group of people.
+Wishlist — це приватний список бажань у Telegram. Цей плагін дає ШІ-асистентові (Claude, Codex або ChatGPT) змогу читати й
+змінювати **твої власні** бажання та добірки, коли ти про це просиш: «Покажи мої бажання», «Додай кавомолку з цим
+посиланням», «Поклади її в мою добірку „День народження“».
 
-**Safety:** the assistant works with your own wishes and collections (and reads other people's wishes in collections you share),
-cannot delete anything for good and never sees who liked a wish. The plugin is only configuration: no code, no hooks, no secrets. You confirm each connection in the bot and can disconnect it any
-time. More in [plugin/README.md](plugin/README.md#safety-and-privacy).
+**Встановлення:** обери свого асистента в [plugin/README.md](plugin/README.md): ChatGPT, Claude Code або Codex. Це рання версія. Тобі
+потрібні Telegram і [бот Wishlist](https://t.me/wishlist4ubot), а підключення поки що відкрите для обмеженого кола людей.
 
-**Problems:** write to the [Wishlist bot](https://t.me/wishlist4ubot).
+**Безпека:** асистент працює з твоїми власними бажаннями та добірками (і читає чужі бажання у спільних добірках, де ти власник або співавтор), не може
+нічого видалити назавжди й ніколи не бачить, хто вподобав бажання. Плагін — це лише налаштування: ні коду, ні хуків, ні ключів чи паролів.
+Кожне підключення ти підтверджуєш у боті й можеш відключити будь-коли. Докладніше в
+[plugin/README.md](plugin/README.md#безпека-й-приватність).
 
-A step-by-step guide for ChatGPT is in [docs/chatgpt.md](docs/chatgpt.md). MIT license, see [LICENSE](LICENSE).
+**Щось не працює?** Напиши [боту Wishlist](https://t.me/wishlist4ubot).
+
+Покрокова інструкція для ChatGPT — у [docs/chatgpt.md](docs/chatgpt.md). Ліцензія MIT, див. [LICENSE](LICENSE).

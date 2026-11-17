@@ -1,0 +1,21 @@
+{
+  "language": "en",
+  "description": "Connects an AI assistant to your private Wishlist catalog in Telegram: list, add and organise your own wishes and collections. Sign-in is confirmed in the bot.",
+  "marketplaceDescription": "The Wishlist plugin for Claude Code",
+  "keywords": ["wishlist", "gifts", "telegram", "mcp"],
+  "displayName": "Wishlist",
+  "shortDescription": "Add and organise your wishes",
+  "longDescription": "Wishlist lets an assistant work with your own wishes and collections in the Wishlist Telegram bot. You sign in by confirming the connection in the bot and can disconnect there at any time. The assistant cannot delete anything for good, and it never sees likes: no like, no count of likes and no person who liked.",
+  "capabilities": [
+    "List and read your wishes and collections",
+    "Add a wish with its links and pictures",
+    "Edit, archive and restore your wishes",
+    "Create, rename, archive and restore collections",
+    "Add wishes to a collection and remove them from it"
+  ],
+  "defaultPrompt": [
+    "Show my wishes and the collections they are in.",
+    "Add a wish for a coffee grinder to my Birthday collection.",
+    "Which of my wishes have I not put in any collection?"
+  ]
+}

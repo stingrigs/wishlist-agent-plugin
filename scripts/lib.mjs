@@ -3,7 +3,8 @@ import { createRequire } from "node:module";
 import { join, relative, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 
-import { manifestSyncProblems } from "./manifests.mjs";
+import { languageProblems } from "./languages.mjs";
+import { manifestSyncProblems, packagesOf, readSource } from "./manifests.mjs";
 import { markerProblems } from "./openai-variant.mjs";
 
 // Every rule of the package. What a client installs is the folder `plugin/` and nothing else, and it is
@@ -11,7 +12,8 @@ import { markerProblems } from "./openai-variant.mjs";
 // problems as strings (empty = fine); it reads files and does not throw on a bad package, so a test can break a copy
 // of the package and read what was said.
 
-export const payload = "plugin";
+// The folder of the package being checked. `checkPackage` runs the per-package rules once for each package of the source and sets it.
+export let payload = "plugin";
 
 const require = createRequire(import.meta.url);
 
@@ -234,15 +236,15 @@ function secretProblems(root, problems) {
   for (const { name, symlink } of walk(root)) {
     if (secretScanSkips.includes(name.split("/")[0])) continue;
     if (symlink) {
-      if (!name.startsWith(`${payload}/`)) problems.push(`${name} is a symbolic link: it is not read for secrets, and the repository holds none`);
+      if (!/^plugin(?:-en)?\//u.test(name)) problems.push(`${name} is a symbolic link: it is not read for secrets, and the repository holds none`);
       continue;
     }
 
     const bytes = readFileSync(join(root, name));
 
     if (bytes.includes(0)) {
-      if (!/^plugin\/assets\/[^/]+\.(?:png|jpe?g)$/u.test(name) && name !== formIconPath) {
-        problems.push(`${name} is a binary file outside ${payload}/assets: it cannot be read for secrets`);
+      if (!/^plugin(?:-en)?\/assets\/[^/]+\.(?:png|jpe?g)$/u.test(name) && name !== formIconPath) {
+        problems.push(`${name} is a binary file outside the package assets: it cannot be read for secrets`);
       }
       continue;
     }
@@ -343,7 +345,10 @@ function publicationProblems(publication, problems) {
   if (publication === undefined) return;
   onlyKeys("plugin.json extensions.com.openai.publication", publication, ["translations"], problems);
   for (const [locale, entry] of Object.entries(publication.translations ?? {})) {
-    onlyKeys(`plugin.json publication.translations.${locale}`, entry, ["subtitle"], problems);
+    onlyKeys(`plugin.json publication.translations.${locale}`, entry, ["subtitle", "description"], problems);
+    if (entry?.description !== undefined && (typeof entry.description !== "string" || entry.description.trim() === "" || entry.description.length > 4000)) {
+      problems.push(`plugin.json publication.translations.${locale}.description must be a non-empty text of at most 4000 characters`);
+    }
     if (entry?.subtitle !== undefined && (!oneLine(entry.subtitle) || entry.subtitle.length > 30)) {
       problems.push(`plugin.json publication.translations.${locale}.subtitle must be one line of at most 30 characters: ${JSON.stringify(entry.subtitle)}`);
     }
@@ -560,9 +565,11 @@ export function mcpAuthProblems(server, problems) {
 
 const codexAuthentication = ["ON_INSTALL"];
 
-function marketplaceProblems(root, name, problems) {
+function marketplaceProblems(root, packs, problems) {
   const claude = readJson(root, ".claude-plugin/marketplace.json", problems);
   const codex = readJson(root, ".agents/plugins/marketplace.json", problems);
+  const listed = packs.map((pack) => `"${pack.name}"`).join(" and ");
+  const sameList = (plugins, pick) => Array.isArray(plugins) && plugins.length === packs.length && packs.every((pack, index) => pick(plugins[index]) === pack.name);
 
   if (claude) {
     const reason = reservedClaudeName(claude.name ?? "");
@@ -570,35 +577,39 @@ function marketplaceProblems(root, name, problems) {
     onlyKeys(".claude-plugin/marketplace.json", claude, ["name", "description", "owner", "plugins"], problems);
     onlyKeys(".claude-plugin/marketplace.json owner", claude.owner, ["name", "url"], problems);
     if (!claude.owner?.name) problems.push(".claude-plugin/marketplace.json needs owner.name");
-    if (claude.plugins?.length !== 1 || claude.plugins[0].name !== name) {
-      problems.push(`.claude-plugin/marketplace.json must list exactly the plugin "${name}": the marketplace entry name is the install id`);
+    if (!sameList(claude.plugins, (entry) => entry?.name)) {
+      problems.push(`.claude-plugin/marketplace.json must list exactly the plugins ${listed}: the marketplace entry name is the install id`);
     }
-    const entry = claude.plugins?.[0];
-    onlyKeys(".claude-plugin/marketplace.json plugin entry", entry, ["name", "source", "description"], problems);
-    if (entry?.source !== `./${payload}`) {
-      problems.push(`.claude-plugin/marketplace.json source must be "./${payload}": a client installs that folder, not the repository`);
+    for (const [index, pack] of packs.entries()) {
+      const entry = claude.plugins?.[index];
+      onlyKeys(".claude-plugin/marketplace.json plugin entry", entry, ["name", "source", "description"], problems);
+      if (entry?.source !== `./${pack.dir}`) {
+        problems.push(`.claude-plugin/marketplace.json source must be "./${pack.dir}": a client installs that folder, not the repository`);
+      }
     }
   }
   if (codex) {
-    const entry = codex.plugins?.[0];
     onlyKeys(".agents/plugins/marketplace.json", codex, ["name", "interface", "plugins"], problems);
-    if (codex.plugins?.length !== 1 || entry.name !== name) problems.push(`.agents/plugins/marketplace.json must list exactly the plugin "${name}"`);
-    onlyKeys(".agents/plugins/marketplace.json plugin entry", entry, ["name", "source", "policy", "category"], problems);
-    onlyKeys(".agents/plugins/marketplace.json policy", entry?.policy, ["installation", "authentication"], problems);
-    const source = entry?.source;
-    const path = typeof source === "string" ? source : source?.path;
-    if (typeof source === "object") onlyKeys(".agents/plugins/marketplace.json source", source, ["source", "path"], problems);
-    if (typeof source === "object" && source.source !== "local") {
-      problems.push('.agents/plugins/marketplace.json source must be local: the plugin comes from this repository, not from a URL or a package');
+    if (!sameList(codex.plugins, (entry) => entry?.name)) problems.push(`.agents/plugins/marketplace.json must list exactly the plugins ${listed}`);
+    for (const [index, pack] of packs.entries()) {
+      const entry = codex.plugins?.[index];
+      onlyKeys(".agents/plugins/marketplace.json plugin entry", entry, ["name", "source", "policy", "category"], problems);
+      onlyKeys(".agents/plugins/marketplace.json policy", entry?.policy, ["installation", "authentication"], problems);
+      const source = entry?.source;
+      const path = typeof source === "string" ? source : source?.path;
+      if (typeof source === "object") onlyKeys(".agents/plugins/marketplace.json source", source, ["source", "path"], problems);
+      if (typeof source === "object" && source.source !== "local") {
+        problems.push('.agents/plugins/marketplace.json source must be local: the plugin comes from this repository, not from a URL or a package');
+      }
+      if (path !== `./${pack.dir}`) problems.push(`.agents/plugins/marketplace.json source path must be "./${pack.dir}"`);
+      if (!["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"].includes(entry?.policy?.installation)) {
+        problems.push("installation in .agents/plugins/marketplace.json policy must be AVAILABLE, INSTALLED_BY_DEFAULT or NOT_AVAILABLE");
+      }
+      if (!codexAuthentication.includes(entry?.policy?.authentication)) {
+        problems.push(`.agents/plugins/marketplace.json policy.authentication must be ${codexAuthentication.join(" or ")} (the only value OpenAI's documentation names)`);
+      }
+      if (!entry?.category) problems.push(".agents/plugins/marketplace.json needs a category");
     }
-    if (path !== `./${payload}`) problems.push(`.agents/plugins/marketplace.json source path must be "./${payload}"`);
-    if (!["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"].includes(entry?.policy?.installation)) {
-      problems.push("installation in .agents/plugins/marketplace.json policy must be AVAILABLE, INSTALLED_BY_DEFAULT or NOT_AVAILABLE");
-    }
-    if (!codexAuthentication.includes(entry?.policy?.authentication)) {
-      problems.push(`.agents/plugins/marketplace.json policy.authentication must be ${codexAuthentication.join(" or ")} (the only value OpenAI's documentation names)`);
-    }
-    if (!entry?.category) problems.push(".agents/plugins/marketplace.json needs a category");
   }
   if (claude && codex && claude.name !== codex.name) {
     problems.push(`the marketplace name differs: ${claude.name} (Claude) and ${codex.name} (Codex)`);
@@ -635,7 +646,7 @@ function consistencyProblems({ portable, claude, codex, claudeMarketplace }, pro
   if (claude?.displayName && portableInterface?.displayName && claude.displayName !== portableInterface.displayName) {
     problems.push(`displayName differs: ${claude.displayName} (Claude) and ${portableInterface.displayName} (listing)`);
   }
-  const entry = claudeMarketplace?.plugins?.[0];
+  const entry = claudeMarketplace?.plugins?.find((candidate) => candidate?.name === portable?.name);
   if (entry && portable && entry.description !== portable.description) {
     problems.push("the description of the Claude marketplace entry differs from plugin.json (the entry's description overrides it in a listing)");
   }
@@ -686,8 +697,8 @@ function readmeProblems(root, mcpUrl, problems) {
 
 // ---- the whole package --------------------------------------------------------------------------------------------
 
-/** All the rules, on the package at `root`. */
-export function checkPackage(root) {
+/** The rules of one package folder (`payload`): its manifests, icons, license, README, files. Returns the problems, paths relative to the repository. */
+function checkOnePackage(root, claudeMarketplace) {
   const problems = [];
   const at = (file) => `${payload}/${file}`;
   const read = (file) => readJson(root, at(file), problems);
@@ -705,19 +716,46 @@ export function checkPackage(root) {
   iconProblems(root, ".claude-plugin/plugin.json icon", claude?.icon, problems);
   iconProblems(root, ".codex-plugin/plugin.json interface.logo", codex?.interface?.logo, problems);
   iconProblems(root, ".codex-plugin/plugin.json interface.composerIcon", codex?.interface?.composerIcon, problems);
+  iconProblems(root, "plugin.json interface.logo", portable?.extensions?.["com.openai"]?.interface?.logo, problems);
   licenseProblems(root, [["plugin.json", portable], [".claude-plugin/plugin.json", claude], [".codex-plugin/plugin.json", codex]], problems);
   assetProblems(root, problems);
-  formIconProblems(root, problems);
   mcpProblems(mcp, claudeMcp, problems);
-
-  const claudeMarketplace = marketplaceProblems(root, portable?.name ?? claude?.name, problems);
   consistencyProblems({ portable, claude, codex, claudeMarketplace }, problems);
-  problems.push(...manifestSyncProblems(root));
   payloadProblems(root, problems);
-  secretProblems(root, problems);
   const mcpUrl = mcp?.mcpServers?.wishlist?.url;
   if (typeof mcpUrl === "string") readmeProblems(root, mcpUrl, problems);
   return problems.map((problem) => problem.replace(/^(plugin\.json|mcp\.json|\.mcp\.json|\.claude-plugin\/plugin\.json|\.codex-plugin\/plugin\.json)/u, `${payload}/$1`));
+}
+
+/** All the rules, on the package at `root`: each package folder, the marketplace files, the sources, the secrets, the icon of the form, the two languages. */
+export function checkPackage(root) {
+  const problems = [];
+  let source;
+
+  try {
+    source = readSource(root);
+  } catch {
+    return manifestSyncProblems(root);
+  }
+  const packs = packagesOf(source);
+  const marketplaceProblemsList = [];
+  const claudeMarketplace = marketplaceProblems(root, packs, marketplaceProblemsList);
+
+  for (const pack of packs) {
+    const previous = payload;
+    payload = pack.dir;
+    try {
+      problems.push(...checkOnePackage(root, claudeMarketplace));
+    } finally {
+      payload = previous;
+    }
+  }
+  problems.push(...marketplaceProblemsList);
+  problems.push(...manifestSyncProblems(root));
+  formIconProblems(root, problems);
+  secretProblems(root, problems);
+  problems.push(...languageProblems(root, source));
+  return problems;
 }
 
 /** Markdown links outside code: `external` (http/https) and `relative` (path without #fragment). */
@@ -753,7 +791,9 @@ export function manifestUrls(root) {
     else if (value && typeof value === "object") Object.values(value).forEach(visit);
   };
 
-  for (const file of ["plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"].map((f) => join(root, payload, f)).concat([join(root, ".claude-plugin/marketplace.json"), join(root, ".agents/plugins/marketplace.json")])) {
+  const dirs = packagesOf(readSource(root)).map((pack) => pack.dir);
+
+  for (const file of dirs.flatMap((dir) => ["plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"].map((f) => join(root, dir, f))).concat([join(root, ".claude-plugin/marketplace.json"), join(root, ".agents/plugins/marketplace.json")])) {
     if (existsSync(file)) visit(JSON.parse(readFileSync(file, "utf8")));
   }
   return [...urls].filter((url) => !url.endsWith("/mcp"));
@@ -766,12 +806,16 @@ export function manifestUrls(root) {
  */
 export function checkReleaseReadiness(root, tag) {
   const problems = checkPackage(root);
-  const version = JSON.parse(readFileSync(join(root, payload, "plugin.json"), "utf8")).version;
+  const source = readSource(root);
+  const version = source.version;
+  const dirs = packagesOf(source).map((pack) => pack.dir);
 
   if (tag !== `v${version}`) problems.push(`the tag ${tag} must be v${version}, the version in the manifests`);
 
   const readers = [
-    ...walk(join(root, payload), join(root, payload), []).map(({ name }) => `${payload}/${name}`),
+    ...dirs.flatMap((dir) => walk(join(root, dir), join(root, dir), []).map(({ name }) => `${dir}/${name}`)),
+    "locales/uk.json",
+    "locales/en.json",
     ".claude-plugin/marketplace.json",
     ".agents/plugins/marketplace.json",
     "plugin-source.json",

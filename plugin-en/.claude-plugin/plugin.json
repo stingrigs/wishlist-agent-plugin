@@ -1,0 +1,24 @@
+{
+  "name": "wishlist-en",
+  "displayName": "Wishlist",
+  "version": "0.1.0",
+  "description": "Connects an AI assistant to your private Wishlist catalog in Telegram: list, add and organise your own wishes and collections. Sign-in is confirmed in the bot.",
+  "author": {
+    "name": "Wishlist Bot",
+    "url": "https://t.me/wishlist4ubot"
+  },
+  "homepage": "https://t.me/wishlist4ubot",
+  "repository": "https://github.com/stingrigs/wishlist-agent-plugin",
+  "keywords": [
+    "wishlist",
+    "gifts",
+    "telegram",
+    "mcp"
+  ],
+  "privacyPolicyUrl": "https://domain-pending.invalid/privacy",
+  "termsOfServiceUrl": "https://domain-pending.invalid/terms",
+  "supportUrl": "https://t.me/wishlist4ubot",
+  "documentationUrl": "https://github.com/stingrigs/wishlist-agent-plugin/blob/main/plugin-en/README.md",
+  "license": "MIT",
+  "icon": "./assets/icon.png"
+}

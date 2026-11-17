@@ -1,60 +1,61 @@
-# Connect Wishlist to ChatGPT
+# Підключення Wishlist до ChatGPT
 
-Wishlist is a private wish list in Telegram. Once ChatGPT is connected, it can show and add **your own** wishes and
-collections when you ask. You need ChatGPT, Telegram and your account in the [Wishlist bot](https://t.me/wishlist4ubot).
-Connecting is currently open to a limited group of people.
+[English](chatgpt.en.md)
 
-The server address:
+Wishlist — це приватний список бажань у Telegram. Коли ChatGPT підключено, він може показувати, додавати й змінювати **твої власні**
+бажання та добірки, коли ти просиш. Тобі потрібні ChatGPT, Telegram і твій акаунт у [боті Wishlist](https://t.me/wishlist4ubot).
+Підключення зараз відкрите для обмеженого кола людей.
+
+Адреса сервера:
 
 ```text
 https://mcp.wishlist-bot.duckdns.org/mcp
 ```
 
-## Add the server in ChatGPT
+## Додай сервер у ChatGPT
 
-1. Open [ChatGPT Plugins](https://chatgpt.com/plugins), press the plus button and choose **Add custom MCP server**.
-2. **Name**: `Wishlist`. **Description** is optional.
-3. **Choose icon** is optional. It takes a PNG of up to 10 KB.
-4. Under **Connection**, choose the public address (not **Tunnel**) and enter the address above as the **Server URL**. It must
-   end with `/mcp`.
-5. **Authentication**: choose **OAuth**. Do not choose «OAuth or no authentication»: ChatGPT then stops with «The MCP server
-   denied access».
-6. Open **Advanced OAuth settings**:
-   - **Registration method**: **Client Identifier Metadata Document (CIMD)**. This is how ChatGPT identifies itself to the server.
-   - **Default scopes**: tick `wishlist:read` and `wishlist:write`. Leave **Base scopes** empty.
-   - Leave OIDC off. The form says «This server did not advertise an OIDC configuration URL»: that is expected.
-7. Tick **I understand and want to continue** and press **Create as a plugin**.
-8. ChatGPT shows **Connect Wishlist**. Press it: a Wishlist page opens in your browser.
+1. Відкрий [ChatGPT Plugins](https://chatgpt.com/plugins), натисни плюс і обери **Add custom MCP server**.
+2. **Name**: `Wishlist`. **Description** — необов'язково.
+3. **Choose icon** — необов'язково. Підходить PNG до 10 КБ.
+4. У розділі **Connection** обери публічну адресу (не **Tunnel**) і встав наведену вище адресу в поле **Server URL**. Вона має закінчуватися
+   на `/mcp`.
+5. У **Authentication** обери **OAuth** (вхід через підтвердження в боті, без пароля). Не обирай **OAuth or no authentication**,
+   бо ChatGPT покаже помилку «The MCP server denied access».
+6. Відкрий **Advanced OAuth settings**:
+   - **Registration method**: **Client Identifier Metadata Document (CIMD)**. Так ChatGPT називає себе серверу.
+   - **Default scopes** (права доступу): познач `wishlist:read` (читання) і `wishlist:write` (запис). **Base scopes** лиши порожніми.
+   - OIDC не вмикай. Форма пише «This server did not advertise an OIDC configuration URL»: це нормально.
+7. Познач **I understand and want to continue** і натисни **Create as a plugin**.
+8. ChatGPT покаже **Connect Wishlist**. Натисни: у браузері відкриється сторінка Wishlist.
 
-## Confirm in Telegram
+## Підтверди в Telegram
 
-1. The page asks you to open Telegram. Press **Open in Telegram** (the page is in Ukrainian: «Відкрити в Telegram»). The link works for
-   10 minutes.
-2. The bot shows «Connect «ChatGPT»?» («🔌 Підключити «ChatGPT»?») with a short code. **The code must match the one on the page.**
-   If it does not, do not confirm.
-3. Press «✅ Підключити» (Connect). To refuse, press «✖️ Не підключати» (Do not connect).
-4. The bot says «✅ Підключено «ChatGPT»» (Connected), and the page returns you to ChatGPT.
+1. Сторінка просить відкрити Telegram. Натисни «Відкрити в Telegram». Посилання діє 10 хвилин.
+2. Бот покаже «🔌 Підключити «ChatGPT»?» з коротким кодом. **Код має збігатися з кодом на сторінці.** Якщо не збігається,
+   не підтверджуй.
+3. Натисни «✅ Підключити». Щоб відмовитися, натисни «✖️ Не підключати».
+4. Бот напише «✅ Підключено «ChatGPT»», а сторінка поверне тебе до ChatGPT.
 
-## Try it
+## Спробуй
 
-Start a new chat and ask:
+Почни нову розмову й запитай:
 
-- «Who am I in Wishlist?»: ChatGPT names your account and how many wishes and collections you have.
-- «Create a wish called Test.»: the wish appears in the bot.
+- «Хто я у Wishlist?»: ChatGPT скаже, чий це акаунт і скільки в тебе бажань та добірок.
+- «Створи бажання «Тест».»: бажання з'явиться в боті.
 
-## If it does not work
+## Якщо не працює
 
-| What you see | What to do |
+| Що ти бачиш | Що робити |
 | --- | --- |
-| «The MCP server denied access» in the form | **Authentication** must be **OAuth**, not «OAuth or no authentication». The address must end with `/mcp`. |
-| There is no **Add custom MCP server** | Your ChatGPT account or workspace may not allow custom servers. Ask the administrator. |
-| The bot says «🔒 Підключення недоступне» (Connection unavailable) | The link lasts 10 minutes or was already used. Press **Connect Wishlist** again. If it happens again, you may not be in the group that can connect yet: write to the bot. |
-| The code in the bot differs from the code on the page | Do not confirm. Press «✖️ Не підключати» and start again. |
-| ChatGPT sees no Wishlist tools | Start a new chat. If that does not help, open the connection on **ChatGPT Plugins** and press **Refresh**. |
+| У формі: «The MCP server denied access» | У **Authentication** має бути **OAuth**, а не «OAuth or no authentication». Адреса має закінчуватися на `/mcp`. |
+| Немає пункту **Add custom MCP server** | У твоєму акаунті чи робочому просторі ChatGPT власні сервери можуть бути вимкнені. Спитай адміністратора. |
+| Бот пише «🔒 Підключення недоступне» | Посилання діє лише 10 хвилин, або ним уже скористалися. Натисни **Connect Wishlist** ще раз. Якщо знову те саме, тобі ще не відкрили підключення: напиши боту. |
+| Код у боті не збігається з кодом на сторінці | Не підтверджуй. Натисни «✖️ Не підключати» і почни спочатку. |
+| ChatGPT не бачить інструментів Wishlist | Почни нову розмову. Якщо не допомогло, відкрий підключення в **ChatGPT Plugins** і натисни **Refresh**. |
 
-For anything else, write to the [Wishlist bot](https://t.me/wishlist4ubot).
+Якщо нічого не допомогло, напиши [боту Wishlist](https://t.me/wishlist4ubot).
 
-## Disconnect
+## Відключення
 
-In the Wishlist bot open **Settings, Connected apps** (in Ukrainian: «⚙️ Налаштування», «🔌 Підключені застосунки») and press
-«✖️ Відключити ChatGPT» (Disconnect ChatGPT). Access stops at once.
+У боті Wishlist відкрий «⚙️ Налаштування» › «🔌 Підключені застосунки» і натисни «✖️ Відключити ChatGPT». ChatGPT одразу
+втратить доступ.

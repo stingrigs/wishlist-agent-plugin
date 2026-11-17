@@ -9,14 +9,14 @@ import { readZip, writeZip } from "./zip.mjs";
 
 // `pnpm package:chatgpt` builds the ZIP for OpenAI's developer portal (the «With MCP» route of
 // developers.openai.com/plugins/deploy/submission) and the small icon of ChatGPT's custom-server form, both from the same
-// sources as everything else: the payload `plugin/`. Nothing is committed (`dist/` is ignored) and nothing secret goes in.
+// sources as everything else: the payload of the package named by `zip` in the source (the English one: OpenAI keeps English as the base text of a listing and takes the other languages as translations). Nothing is committed (`dist/` is ignored) and nothing secret goes in.
 //
 // The ZIP is the portable layout: `plugin.json`, `mcp.json`, `skills/`, `assets/`, the README and the LICENSE, at the archive root.
 // The Claude files (`.claude-plugin/`, `.mcp.json`) and the Codex overlay (`.codex-plugin/`) are left out on purpose: OpenAI reads
 // the root `plugin.json`, and «when extensions.com.openai is an object, it replaces the entire .codex-plugin/plugin.json overlay».
-// The ZIP carries a shorter variant of the photo skill (`scripts/openai-variant.mjs`); the full skill stays in `plugin/skills/`.
+// The ZIP carries a shorter variant of the photo skill (`scripts/openai-variant.mjs`); the full skill stays in the Ukrainian package.
 // The ZIP's `mcp.json` also carries the server's `extensions["com.openai"].auth` (OAuth, CIMD, the scopes): OpenAI's portal reads
-// the authentication from the `mcp.json` it is given, while the committed `plugin/mcp.json` stays clean against the closed Agent Plugins schema.
+// the authentication from the `mcp.json` it is given, while the committed `mcp.json` of each package stays clean against the closed Agent Plugins schema.
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -36,7 +36,8 @@ const included = [/^plugin\.json$/u, /^mcp\.json$/u, /^README\.md$/u, /^LICENSE$
 
 /** The files of the payload that go into the ZIP, as `[{ name, bytes }]`. The ZIP's `mcp.json` is the committed one plus the OpenAI `auth` block (`zipMcpManifest`). */
 export function zipEntries(repository = root) {
-  const folder = join(repository, "plugin");
+  const source = readSource(repository);
+  const folder = join(repository, source.packages[source.zip].dir);
   const entries = [];
 
   for (const entry of readdirSync(folder, { recursive: true, withFileTypes: true })) {

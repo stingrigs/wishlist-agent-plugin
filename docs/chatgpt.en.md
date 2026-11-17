@@ -2,8 +2,8 @@
 
 [Українською](chatgpt.md)
 
-Wishlist is a private wish list in Telegram. Once ChatGPT is connected, it can show and add **your own** wishes and
-collections when you ask. You need ChatGPT, Telegram and your account in the [Wishlist bot](https://t.me/wishlist4ubot).
+Wishlist is a private wish list in Telegram. Once ChatGPT is connected, it can show, add and change **your own** wishes
+and collections when you ask. You need ChatGPT, Telegram and your account in the [Wishlist bot](https://t.me/wishlist4ubot).
 Connecting is currently open to a limited group of people.
 
 The server address:
@@ -19,8 +19,8 @@ https://mcp.wishlist-bot.duckdns.org/mcp
 3. **Choose icon** is optional. It takes a PNG of up to 10 KB.
 4. Under **Connection**, choose the public address (not **Tunnel**) and enter the address above as the **Server URL**. It must
    end with `/mcp`.
-5. **Authentication**: choose **OAuth**. Do not choose «OAuth or no authentication»: ChatGPT then stops with «The MCP server
-   denied access».
+5. **Authentication**: choose **OAuth** (sign-in confirmed in the bot, no password). Do not choose **OAuth or no authentication**,
+   because ChatGPT then shows the error «The MCP server denied access».
 6. Open **Advanced OAuth settings**:
    - **Registration method**: **Client Identifier Metadata Document (CIMD)**. This is how ChatGPT identifies itself to the server.
    - **Default scopes**: tick `wishlist:read` and `wishlist:write`. Leave **Base scopes** empty.

@@ -398,8 +398,8 @@ test("each README names the clients and its commands match the manifests", () =>
 test("the READMEs have the sections a reader needs, short install steps and working links, in both languages", () => {
   const text = (file) => readFileSync(join(root, file), "utf8");
   const sets = [
-    { readme: "plugin/README.md", root: "README.md", headings: ["## Що можна попросити", "## Встановлення", "## Безпека й приватність", "## Якщо не працює", "## Ще"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Безпека й приватність"] },
-    { readme: "plugin-en/README.md", root: "README.en.md", headings: ["## What you can ask", "## Install", "## Safety and privacy", "## If it does not work", "## More"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Safety and privacy"] },
+    { readme: "plugin/README.md", root: "README.md", headings: ["## Що можна попросити", "## Встановлення", "## Безпека й приватність", "## Якщо не працює", "## Ліцензія"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Безпека й приватність"] },
+    { readme: "plugin-en/README.md", root: "README.en.md", headings: ["## What you can ask", "## Install", "## Safety and privacy", "## If it does not work", "## License"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Safety and privacy"] },
   ];
 
   for (const set of sets) {

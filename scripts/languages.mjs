@@ -41,7 +41,7 @@ function diff(label, a, b, problems) {
 }
 
 /** The Latin words left in Ukrainian prose once code, links, quotes and bold labels are taken out; product names are allowed. */
-const allowedLatin = new Set(["wishlist", "telegram", "chatgpt", "claude", "codex", "code", "openai", "anthropic", "mcp", "oauth", "url", "github", "zip", "mit", "png", "jpeg", "webp", "avif", "gif", "svg", "kb", "mb", "oidc", "cimd", "https", "http", "id", "ai", "api", "ok"]);
+const allowedLatin = new Set(["wishlist", "telegram", "chatgpt", "claude", "codex", "code", "openai", "anthropic", "mcp", "oauth", "url", "github", "zip", "mit", "cookie", "png", "jpeg", "webp", "avif", "gif", "svg", "kb", "mb", "oidc", "cimd", "https", "http", "id", "ai", "api", "ok"]);
 
 export function latinWords(text) {
   const prose = text

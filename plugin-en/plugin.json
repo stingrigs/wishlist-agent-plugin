@@ -1,0 +1,56 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wishlist-en",
+  "version": "0.1.0",
+  "description": "Connects an AI assistant to your private Wishlist catalog in Telegram: list, add and organise your own wishes and collections. Sign-in is confirmed in the bot.",
+  "author": {
+    "name": "Wishlist Bot",
+    "url": "https://t.me/wishlist4ubot"
+  },
+  "homepage": "https://t.me/wishlist4ubot",
+  "repository": "https://github.com/stingrigs/wishlist-agent-plugin",
+  "keywords": [
+    "wishlist",
+    "gifts",
+    "telegram",
+    "mcp"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Wishlist",
+        "shortDescription": "Add and organise your wishes",
+        "longDescription": "Wishlist lets an assistant work with your own wishes and collections in the Wishlist Telegram bot. You sign in by confirming the connection in the bot and can disconnect there at any time. The assistant cannot delete anything for good, and it never sees likes: no like, no count of likes and no person who liked.",
+        "developerName": "Wishlist Bot",
+        "category": "Productivity",
+        "capabilities": [
+          "List and read your wishes and collections",
+          "Add a wish with its links and pictures",
+          "Edit, archive and restore your wishes",
+          "Create, rename, archive and restore collections",
+          "Add wishes to a collection and remove them from it"
+        ],
+        "websiteURL": "https://t.me/wishlist4ubot",
+        "supportURL": "https://t.me/wishlist4ubot",
+        "privacyPolicyURL": "https://domain-pending.invalid/privacy",
+        "termsOfServiceURL": "https://domain-pending.invalid/terms",
+        "defaultPrompt": [
+          "Show my wishes and the collections they are in.",
+          "Add a wish for a coffee grinder to my Birthday collection.",
+          "Which of my wishes have I not put in any collection?"
+        ],
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/icon.png"
+      },
+      "publication": {
+        "translations": {
+          "uk-UA": {
+            "subtitle": "Додавай і впорядковуй бажання",
+            "description": "Wishlist дає асистентові змогу працювати з твоїми бажаннями й добірками в Telegram-боті Wishlist. Ти входиш, підтвердивши підключення в боті, і можеш відключити його там будь-коли. Асистент не може нічого видалити назавжди й ніколи не бачить вподобань: ні самих вподобань, ні їх кількості, ні того, хто вподобав."
+          }
+        }
+      }
+    }
+  },
+  "license": "MIT"
+}

@@ -1,7 +1,5 @@
 {
-  "name": "wishlist",
   "version": "0.1.0",
-  "description": "Connects an AI assistant to your private Wishlist catalog in Telegram: list, add and organise your own wishes and collections. Sign-in is confirmed in the bot.",
   "author": {
     "name": "Wishlist Bot",
     "url": "https://t.me/wishlist4ubot"
@@ -9,7 +7,6 @@
   "homepage": "https://t.me/wishlist4ubot",
   "repository": "https://github.com/stingrigs/wishlist-agent-plugin",
   "license": "MIT",
-  "keywords": ["wishlist", "gifts", "telegram", "mcp"],
   "icon": "./assets/icon.png",
   "mcp": {
     "serverName": "wishlist",
@@ -17,35 +14,21 @@
     "scopes": ["wishlist:read", "wishlist:write"]
   },
   "listing": {
-    "displayName": "Wishlist",
-    "shortDescription": "Add and organise your wishes",
-    "shortDescriptionUk": "Додавай і впорядковуй бажання",
-    "longDescription": "Wishlist lets an assistant work with your own wishes and collections in the Wishlist Telegram bot. You sign in by confirming the connection in the bot and can disconnect there at any time. The assistant cannot delete anything for good, and it never sees likes: no like, no count of likes and no person who liked.",
     "developerName": "Wishlist Bot",
     "category": "Productivity",
-    "capabilities": [
-      "List and read your wishes and collections",
-      "Add a wish with its links and pictures",
-      "Edit, archive and restore your wishes",
-      "Create, rename, archive and restore collections",
-      "Add wishes to a collection and remove them from it"
-    ],
-    "defaultPrompt": [
-      "Show my wishes and the collections they are in.",
-      "Add a wish for a coffee grinder to my Birthday collection.",
-      "Which of my wishes have I not put in any collection?"
-    ],
     "websiteURL": "https://t.me/wishlist4ubot",
     "supportURL": "https://t.me/wishlist4ubot",
     "privacyPolicyURL": "https://domain-pending.invalid/privacy",
     "termsOfServiceURL": "https://domain-pending.invalid/terms"
   },
-  "claude": {
-    "documentationUrl": "https://github.com/stingrigs/wishlist-agent-plugin/blob/main/plugin/README.md"
+  "packages": {
+    "uk": { "dir": "plugin", "name": "wishlist", "locale": "locales/uk.json", "openaiLocale": "uk-UA" },
+    "en": { "dir": "plugin-en", "name": "wishlist-en", "locale": "locales/en.json", "openaiLocale": "en-US" }
   },
+  "main": "uk",
+  "zip": "en",
   "marketplace": {
     "name": "wishlist-plugins",
-    "claudeDescription": "The Wishlist plugin for Claude Code",
     "codexInstallation": "AVAILABLE",
     "codexAuthentication": "ON_INSTALL"
   }

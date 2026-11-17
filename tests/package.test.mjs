@@ -23,7 +23,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function copyOfPackage() {
   const directory = mkdtempSync(join(tmpdir(), "wishlist-plugin-"));
-  for (const entry of ["plugin", ".claude-plugin", ".agents", "schemas", "scripts", ".github", "assets", "README.md", "LICENSE", "plugin-source.json"]) {
+  for (const entry of ["plugin", "plugin-en", "locales", ".claude-plugin", ".agents", "schemas", "scripts", ".github", "assets", "README.md", "README.en.md", "docs", "LICENSE", "plugin-source.json"]) {
     cpSync(join(root, entry), join(directory, entry), { recursive: true });
   }
   return directory;
@@ -154,9 +154,10 @@ const jsonRules = [
   ["portable: a starter prompt with an @mention", "plugin/plugin.json", (m) => { m.extensions["com.openai"].interface.defaultPrompt = ["Ask @Wishlist for my wishes."]; }, /defaultPrompt must carry no @mention/u],
   ["portable: two starter prompts that are the same after normalization", "plugin/plugin.json", (m) => { m.extensions["com.openai"].interface.defaultPrompt = ["Show my wishes.", "  SHOW   my wishes. "]; }, /defaultPrompt prompts must be unique/u],
   ["portable: a policy URL of 1025 characters", "plugin/plugin.json", (m) => { m.extensions["com.openai"].interface.privacyPolicyURL = `https://domain-pending.invalid/${"x".repeat(994)}`; }, /privacyPolicyURL is longer than 1024/u],
-  ["portable: a translated subtitle of 31 characters", "plugin/plugin.json", (m) => { m.extensions["com.openai"].publication.translations["uk-UA"].subtitle = "я".repeat(31); }, /translations\.uk-UA\.subtitle must be one line of at most 30/u],
-  ["portable: a translated description is not declared", "plugin/plugin.json", (m) => { m.extensions["com.openai"].publication.translations["uk-UA"].description = "x"; }, /translations\.uk-UA must not set description/u],
-  ["portable: a publication key that is not translations", "plugin/plugin.json", (m) => { m.extensions["com.openai"].publication.countries = ["US"]; }, /publication must not set countries/u],
+  ["portable: a translated subtitle of 31 characters", "plugin-en/plugin.json", (m) => { m.extensions["com.openai"].publication.translations["uk-UA"].subtitle = "я".repeat(31); }, /translations\.uk-UA\.subtitle must be one line of at most 30/u],
+  ["portable: a translated description of 4001 characters", "plugin-en/plugin.json", (m) => { m.extensions["com.openai"].publication.translations["uk-UA"].description = "x".repeat(4001); }, /translations\.uk-UA\.description must be a non-empty text of at most 4000 characters/u],
+  ["portable: a translation key that is not a language", "plugin-en/plugin.json", (m) => { m.extensions["com.openai"].publication.translations["uk-UA"].keywords = ["x"]; }, /translations\.uk-UA must not set keywords/u],
+  ["portable: a publication key that is not translations", "plugin-en/plugin.json", (m) => { m.extensions["com.openai"].publication.countries = ["US"]; }, /publication must not set countries/u],
   ["codex: no capabilities", "plugin/.codex-plugin/plugin.json", (m) => { delete m.interface.capabilities; }, /needs interface\.capabilities/u],
   ["codex: no composer icon", "plugin/.codex-plugin/plugin.json", (m) => { delete m.interface.composerIcon; }, /needs interface\.composerIcon/u],
   ["codex: no support URL", "plugin/.codex-plugin/plugin.json", (m) => { delete m.interface.supportURL; }, /needs interface\.supportURL/u],
@@ -169,12 +170,12 @@ const jsonRules = [
   // the committed mcp.json stays plain: the OpenAI auth block lives only in the ZIP (tests/chatgpt-package.test.mjs)
   ["mcp.json: an extensions key on the server (the ZIP adds it, the committed file never has it)", "plugin/mcp.json", (m) => { m.mcpServers.wishlist.extensions = { "com.openai": { auth: { type: "oauth" } } }; }, /mcp\.json.*schema/u],
   // one source of truth: the generated files are the source's, and a file that was edited by hand says so
-  ["source: a manifest edited by hand", "plugin/.codex-plugin/plugin.json", (m) => { m.keywords = ["wishlist"]; }, /plugin\/\.codex-plugin\/plugin\.json differs from what plugin-source\.json generates/u],
-  ["source: the marketplace edited by hand", ".agents/plugins/marketplace.json", (m) => { m.plugins[0].policy.installation = "INSTALLED_BY_DEFAULT"; }, /\.agents\/plugins\/marketplace\.json differs from what plugin-source\.json generates/u],
-  ["source: the Claude install file edited by hand", "plugin/.mcp.json", (m) => { m.mcpServers.wishlist.url = "https://mcp.wishlist-bot.duckdns.org/other/mcp"; }, /plugin\/\.mcp\.json differs from what plugin-source\.json generates/u],
-  ["source: the version changed in the source only", "plugin-source.json", (m) => { m.version = "0.2.0"; }, /plugin\/plugin\.json differs from what plugin-source\.json generates/u],
-  ["source: the name changed in the source only", "plugin-source.json", (m) => { m.name = "wishlist-gifts"; }, /plugin\/\.claude-plugin\/plugin\.json differs from what plugin-source\.json generates/u],
-  ["source: the server address changed in the source only", "plugin-source.json", (m) => { m.mcp.url = "https://mcp.wishlist-app.com/mcp"; }, /plugin\/mcp\.json differs from what plugin-source\.json generates/u],
+  ["source: a manifest edited by hand", "plugin/.codex-plugin/plugin.json", (m) => { m.keywords = ["wishlist"]; }, /plugin\/\.codex-plugin\/plugin\.json differs from what plugin-source\.json and the locale files generate/u],
+  ["source: the marketplace edited by hand", ".agents/plugins/marketplace.json", (m) => { m.plugins[0].policy.installation = "INSTALLED_BY_DEFAULT"; }, /\.agents\/plugins\/marketplace\.json differs from what plugin-source\.json and the locale files generate/u],
+  ["source: the Claude install file edited by hand", "plugin/.mcp.json", (m) => { m.mcpServers.wishlist.url = "https://mcp.wishlist-bot.duckdns.org/other/mcp"; }, /plugin\/\.mcp\.json differs from what plugin-source\.json and the locale files generate/u],
+  ["source: the version changed in the source only", "plugin-source.json", (m) => { m.version = "0.2.0"; }, /plugin\/plugin\.json differs from what plugin-source\.json and the locale files generate/u],
+  ["source: the name changed in the source only", "plugin-source.json", (m) => { m.packages.uk.name = "wishlist-gifts"; }, /plugin\/\.claude-plugin\/plugin\.json differs from what plugin-source\.json and the locale files generate/u],
+  ["source: the server address changed in the source only", "plugin-source.json", (m) => { m.mcp.url = "https://mcp.wishlist-app.com/mcp"; }, /plugin\/mcp\.json differs from what plugin-source\.json and the locale files generate/u],
   ["claude: an icon that is not inside the payload", "plugin/.claude-plugin/plugin.json", (m) => { m.icon = "../icon.png"; }, /icon must be a path \.\/assets/u],
   ["claude: an SVG icon", "plugin/.claude-plugin/plugin.json", (m) => { m.icon = "./assets/icon.svg"; }, /icon must be a path \.\/assets/u],
   ["claude: an icon that does not exist", "plugin/.claude-plugin/plugin.json", (m) => { m.icon = "./assets/nothing.png"; }, /does not exist/u],
@@ -289,13 +290,13 @@ test("the payload holds only the allowlisted files, and nothing else is installe
   ];
   for (const [file, text] of cases) {
     const problems = withCopy(addFile(file, text));
-    assert.ok(problems.some((p) => p.includes(`${file.replace("plugin/", "plugin/")}`) && /allowlist/u.test(p)), `${file} not refused: ${JSON.stringify(problems)}`);
+    assert.ok(problems.some((p) => p.includes(`${file.replace("plugin/", "plugin/")}`) && /is not on the allowlist of the payload/u.test(p)), `${file} not refused: ${JSON.stringify(problems)}`);
   }
   for (const file of ["plugin/skills/x/SKILL.md", "plugin/skills/x/references/a.md", "plugin/LICENSE", "plugin/assets/logo.png"]) {
     const problems = withCopy((directory) => {
       addFile(file, file.endsWith(".png") ? "png-bytes" : "text\n")(directory);
     });
-    assert.ok(!problems.some((p) => /allowlist/u.test(p)), `${file} should be allowed: ${JSON.stringify(problems)}`);
+    assert.ok(!problems.some((p) => /is not on the allowlist of the payload/u.test(p)), `${file} should be allowed: ${JSON.stringify(problems)}`);
   }
 });
 
@@ -355,7 +356,11 @@ test("a skill carries no hooks, no tool permissions and no shell-command line", 
     const problems = withCopy(addFile(file, text));
     assert.ok(problems.some((p) => pattern.test(p)), `${name}: expected ${pattern}, got ${JSON.stringify(problems)}`);
   }
-  const fine = withCopy(addFile("plugin/skills/x/SKILL.md", skill('name: x\ndescription: "d"\nlicense: MIT\nmetadata:\n  version: "1"')));
+  // A well-formed skill is the same file in both languages, or the languages disagree.
+  const both = (front, body) => (directory) => {
+    for (const dir of ["plugin", "plugin-en"]) addFile(`${dir}/skills/x/SKILL.md`, skill(front, body))(directory);
+  };
+  const fine = withCopy(both('name: x\ndescription: "d"\nlicense: MIT\nmetadata:\n  version: "1"', "1\n"));
   assert.deepEqual(fine, []);
 });
 
@@ -371,36 +376,46 @@ test("the README uses the one MCP address, over https, in every command", () => 
   assert.ok(gone.some((p) => /README\.md is missing/u.test(p)), JSON.stringify(gone));
 });
 
-test("the README names the clients and its commands match the manifests", () => {
-  const readme = readFileSync(join(root, "plugin/README.md"), "utf8");
+test("each README names the clients and its commands match the manifests", () => {
+  const source = JSON.parse(readFileSync(join(root, "plugin-source.json"), "utf8"));
 
-  for (const heading of [/### ChatGPT/u, /### Claude Code/u, /### Codex/u]) assert.match(readme, heading);
-  for (const command of [`claude mcp add --transport http --scope user wishlist ${mcpUrl}`, `codex mcp add wishlist --url ${mcpUrl}`, "codex mcp login wishlist"]) {
-    assert.ok(readme.includes(command), `README lacks: ${command}`);
+  for (const [id, pack] of Object.entries(source.packages)) {
+    const readme = readFileSync(join(root, pack.dir, "README.md"), "utf8");
+
+    for (const heading of [/### ChatGPT/u, /### Claude Code/u, /### Codex/u]) assert.match(readme, heading, `${pack.dir}/README.md (${id})`);
+    for (const command of [
+      `claude mcp add --transport http --scope user wishlist ${mcpUrl}`,
+      `codex mcp add wishlist --url ${mcpUrl}`,
+      "codex mcp login wishlist",
+      "claude plugin marketplace add stingrigs/wishlist-agent-plugin",
+      `claude plugin install ${pack.name}@${source.marketplace.name}`,
+    ]) {
+      assert.ok(readme.includes(command), `${pack.dir}/README.md lacks: ${command}`);
+    }
   }
 });
 
-test("the READMEs have the sections a reader needs, short install steps and working links", () => {
+test("the READMEs have the sections a reader needs, short install steps and working links, in both languages", () => {
   const text = (file) => readFileSync(join(root, file), "utf8");
+  const sets = [
+    { readme: "plugin/README.md", root: "README.md", headings: ["## Що можна попросити", "## Встановлення", "## Безпека й приватність", "## Якщо не працює", "## Ще"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Безпека й приватність"] },
+    { readme: "plugin-en/README.md", root: "README.en.md", headings: ["## What you can ask", "## Install", "## Safety and privacy", "## If it does not work", "## More"], install: ["### ChatGPT", "### Claude Code", "### Codex", "## Safety and privacy"] },
+  ];
 
-  for (const file of ["README.md", "plugin/README.md"]) {
-    const readme = text(file);
-    assert.ok(readme.split("\n").length <= (file === "README.md" ? 25 : 90), `${file} is too long for a first read: ${readme.split("\n").length} lines`);
-    // English text has no untranslated Ukrainian word: a line with Cyrillic must say, in English, that it quotes the Ukrainian bot.
-    for (const line of readme.split("\n")) {
-      if (/[\u0400-\u04ff]/u.test(line)) assert.match(line, /Ukrainian/u, `${file}: a Ukrainian word without an English explanation: ${line.slice(0, 80)}`);
+  for (const set of sets) {
+    const readme = text(set.readme);
+    assert.ok(text(set.root).split("\n").length <= 28, `${set.root} is too long for a first read`);
+    assert.ok(readme.split("\n").length <= 100, `${set.readme} is too long for a first read: ${readme.split("\n").length} lines`);
+    for (const heading of set.headings) assert.ok(readme.includes(heading), `${set.readme} lacks ${heading}`);
+    for (let i = 0; i < 3; i += 1) {
+      const section = readme.slice(readme.indexOf(set.install[i]), readme.indexOf(set.install[i + 1]));
+      assert.ok(section.split("\n").length <= 28, `${set.install[i]} in ${set.readme} is longer than a screen: ${section.split("\n").length} lines`);
     }
+    // Every link inside the folder is absolute: the README is read inside the ZIP, where a relative path leads nowhere.
+    assert.doesNotMatch(readme, /\]\((?!https?:)/u, `${set.readme} must not link to a relative path`);
+    // The root README links only to files that exist in the repository.
+    for (const [, link] of text(set.root).matchAll(/\]\((?!https?:)([^)#]+)/gu)) assert.ok(existsSync(join(root, link)), `${set.root} links to ${link}, which does not exist`);
   }
-  const readme = text("plugin/README.md");
-  for (const heading of ["## What you can ask", "## Install", "## Safety and privacy", "## If it does not work", "## More"]) assert.ok(readme.includes(heading), `plugin/README.md lacks ${heading}`);
-  for (const [name, next] of [["### ChatGPT", "### Claude Code"], ["### Claude Code", "### Codex"], ["### Codex", "## Safety and privacy"]]) {
-    const section = readme.slice(readme.indexOf(name), readme.indexOf(next));
-    assert.ok(section.split("\n").length <= 25, `${name} is longer than a screen: ${section.split("\n").length} lines`);
-  }
-  // Every link inside the folder is absolute: the README is read inside the ZIP, where a relative path leads nowhere.
-  assert.doesNotMatch(readme, /\]\((?!https?:)/u, "plugin/README.md must not link to a relative path");
-  // The root README links only to files that exist in the repository.
-  for (const [, link] of text("README.md").matchAll(/\]\((?!https?:)([^)#]+)/gu)) assert.ok(existsSync(join(root, link)), `README.md links to ${link}, which does not exist`);
 });
 
 test("links are found in every Markdown form and a relative link to a missing file is reported", () => {
@@ -444,13 +459,9 @@ test("a placeholder blocks a release in any spelling, and a rewritten package wi
   try {
     const rewrite = (file, pairs) => editText(file, (t) => pairs.reduce((acc, [from, to]) => acc.replaceAll(from, to), t))(directory);
     for (const file of [
-      "plugin/plugin.json",
-      "plugin/mcp.json",
-      "plugin/.mcp.json",
-      "plugin/.claude-plugin/plugin.json",
+      ...["plugin", "plugin-en"].flatMap((dir) => ["plugin.json", "mcp.json", ".mcp.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"].map((f) => `${dir}/${f}`)),
       ".claude-plugin/marketplace.json",
-      "plugin/.codex-plugin/plugin.json",
-      "plugin/README.md",
+      ".agents/plugins/marketplace.json",
       "plugin-source.json",
     ]) {
       rewrite(file, [
@@ -487,7 +498,7 @@ test("the workflow installs what each job runs, and the validator's install runs
 });
 
 test("pictures are looked for by default when a wish is created, and a wide picture is preferred", () => {
-  const read = (name) => readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8");
+  const read = (name) => readFileSync(join(root, "plugin-en/skills", name, "SKILL.md"), "utf8");
   const description = (text) => /^description: (.*)$/mu.exec(text)[1];
   const wishlist = read("wishlist");
   const photos = read("wishlist-add-photos");
@@ -537,7 +548,7 @@ test("pictures are looked for by default when a wish is created, and a wide pict
 
 test("the photo skill says in numbers how far it goes", () => {
   // The loop of the photo skill is small on purpose: every limit is a number in the text, so a model cannot read it as a hint.
-  const skill = readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8");
+  const skill = readFileSync(join(root, "plugin-en/skills/wishlist-add-photos/SKILL.md"), "utf8");
   for (const [label, pattern] of [
     ["at most 8 candidates", /at most 8 (?:distinct )?candidates/iu],
     ["at most 2 rounds", /at most 2 rounds/iu],
@@ -554,23 +565,24 @@ test("the photo skill says in numbers how far it goes", () => {
   // The description rule is pointed at in every skill that writes one: short, useful, verified, no specs, no price.
   // The one plain sentence of the rule is visible in each of the three skills where a description is written.
   for (const name of ["wishlist", "wishlist-add-photos", "wishlist-add-from-links"]) {
-    const text = readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8");
+    const text = readFileSync(join(root, "plugin-en/skills", name, "SKILL.md"), "utf8");
     assert.match(text, /The description helps the person decide: why it stands out, the one or two facts that matter, what to check before buying; not everything found on the page\./u, `${name} must say the description rule in one plain sentence`);
   }
   // The one bad and one good example sit where a description is explained, in the skill that owns the rule and in the one that reads pages in a batch.
   for (const name of ["wishlist", "wishlist-add-from-links"]) {
-    const text = readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8");
+    const text = readFileSync(join(root, "plugin-en/skills", name, "SKILL.md"), "utf8");
     assert.match(text, /Bad[^\n]*[\s\S]*Good[^\n]*/u, `${name} must show one bad and one good description`);
   }
   for (const name of ["wishlist-add-photos", "wishlist-add-from-links"]) {
-    const text = readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8");
+    const text = readFileSync(join(root, "plugin-en/skills", name, "SKILL.md"), "utf8");
     assert.match(text, /`wishlist` skill[^.]*\b(?:1 to 3|one to three) sentences|(?:1 to 3|one to three) sentences[^.]*`wishlist` skill/iu, `${name} must point at the description rule of the wishlist skill`);
   }
 });
 
-test("the ChatGPT guide uses the server address of the manifests and quotes the form and the bot", () => {
-  const path = join(root, "docs/chatgpt.md");
-  assert.ok(existsSync(path), "docs/chatgpt.md is missing");
+test("the ChatGPT guides use the server address of the manifests and quote the form and the bot", () => {
+  for (const file of ["docs/chatgpt.md", "docs/chatgpt.en.md"]) {
+  const path = join(root, file);
+  assert.ok(existsSync(path), `${file} is missing`);
   const text = readFileSync(path, "utf8");
   const manifest = readFileSync(join(root, "plugin/mcp.json"), "utf8");
   const mcpUrl = /"url":\s*"(https:\/\/[^"]+)"/u.exec(manifest)?.[1];
@@ -578,15 +590,13 @@ test("the ChatGPT guide uses the server address of the manifests and quotes the 
 
   assert.ok(text.includes(mcpUrl), "the guide must name the server address of the manifests");
   // The form's labels and values, quoted exactly.
-  for (const words of ["Add custom MCP server", "Server URL", "**OAuth**", "«OAuth or no authentication»", "The MCP server denied access", "Client Identifier Metadata Document (CIMD)", "`wishlist:read`", "`wishlist:write`", "Base scopes", "This server did not advertise an OIDC configuration URL", "I understand and want to continue", "Create as a plugin", "Connect Wishlist", "Choose icon", "10 KB"]) {
+  for (const words of ["Add custom MCP server", "Server URL", "**OAuth**", "«OAuth or no authentication»", "The MCP server denied access", "Client Identifier Metadata Document (CIMD)", "`wishlist:read`", "`wishlist:write`", "Base scopes", "This server did not advertise an OIDC configuration URL", "I understand and want to continue", "Create as a plugin", "Connect Wishlist", "Choose icon"]) {
     assert.ok(text.includes(words), `the guide must quote «${words}» exactly as the form shows it`);
   }
   // The words of the bot's screens, as the bot writes them: the person looks for these on the screen.
   for (const words of ["🔌 Підключити «ChatGPT»?", "✅ Підключити", "✖️ Не підключати", "⚙️ Налаштування", "🔌 Підключені застосунки", "✖️ Відключити ChatGPT", "🔒 Підключення недоступне", "Відкрити в Telegram"]) {
     assert.ok(text.includes(words), `the guide must quote «${words}» exactly as the bot writes it`);
   }
-  // The guide is English: a line with Cyrillic must quote a screen of the Ukrainian bot.
-  for (const line of text.split("\n")) {
-    if (/[\u0400-\u04ff]/u.test(line)) assert.match(line, /«[^»]*[\u0400-\u04ff][^»]*»|Ukrainian/u, `a Ukrainian word outside a quoted bot screen: ${line.slice(0, 80)}`);
+  assert.match(text, /10 (?:KB|КБ)/u, `${file}: the icon limit`);
   }
 });

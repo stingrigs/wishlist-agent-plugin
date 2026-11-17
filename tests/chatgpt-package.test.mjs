@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
 
 import { checkPackage, formIconMaxBytes, formIconPath } from "../scripts/lib.mjs";
-import { buildManifests, generatedFiles, manifestSyncProblems, readSource, writeManifests } from "../scripts/manifests.mjs";
+import { buildManifests, generatedFiles, manifestSyncProblems, readLocales, readSource, writeManifests } from "../scripts/manifests.mjs";
 import { descriptionSentence, forOpenAi, markerProblems, zipOnlyStepOne } from "../scripts/openai-variant.mjs";
 import { archiveProblems, build, compressedProblems, isImage, limits, zipEntries } from "../scripts/package-chatgpt.mjs";
 import { readPng } from "./png-pixels.mjs";
@@ -22,7 +22,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function copyOfPackage() {
   const directory = mkdtempSync(join(tmpdir(), "wishlist-zip-"));
-  for (const entry of ["plugin", ".claude-plugin", ".agents", "schemas", "scripts", ".github", "assets", "README.md", "LICENSE", "plugin-source.json"]) {
+  for (const entry of ["plugin", "plugin-en", "locales", ".claude-plugin", ".agents", "schemas", "scripts", ".github", "assets", "README.md", "README.en.md", "docs", "LICENSE", "plugin-source.json"]) {
     cpSync(join(root, entry), join(directory, entry), { recursive: true });
   }
   return directory;
@@ -93,11 +93,11 @@ test("the committed package builds a ZIP that real unzip accepts, with the porta
   assert.deepEqual(compressedProblems(zip), []);
   // The authentication block is in the ZIP's mcp.json only; the committed one stays valid against the closed schema.
   const inZip = JSON.parse(entries.find((e) => e.name === "mcp.json").bytes.toString("utf8"));
-  const committed = JSON.parse(readFileSync(join(root, "plugin/mcp.json"), "utf8"));
+  const committed = JSON.parse(readFileSync(join(root, "plugin-en/mcp.json"), "utf8"));
   assert.deepEqual(inZip.mcpServers.wishlist.extensions["com.openai"].auth, { type: "oauth", client: { mode: "cimd" }, defaultScopes: ["wishlist:read", "wishlist:write"] });
   assert.equal("extensions" in committed.mcpServers.wishlist, false);
   assert.deepEqual({ ...inZip.mcpServers.wishlist, extensions: undefined }, { ...committed.mcpServers.wishlist, extensions: undefined });
-  assert.ok(!readFileSync(join(root, "plugin/README.md"), "utf8").includes("](../"), "no relative link leaves the folder: the README is read inside the ZIP");
+  assert.ok(!readFileSync(join(root, "plugin-en/README.md"), "utf8").includes("](../"), "no relative link leaves the folder: the README is read inside the ZIP");
   // The archive reads back to the same bytes, entry by entry, and the system's own tool accepts it.
   const back = readZip(zip).entries;
   assert.deepEqual(back.map((e) => e.name), names);
@@ -264,7 +264,7 @@ test("the ZIP carries the package icon only, and the build copies the committed 
   const { entries, icon } = build(root);
 
   assert.deepEqual(entries.filter((e) => e.name.startsWith("assets/")).map((e) => e.name), ["assets/icon.png"]);
-  assert.ok(entries.find((e) => e.name === "assets/icon.png").bytes.equals(readFileSync(join(root, "plugin/assets/icon.png"))));
+  assert.ok(entries.find((e) => e.name === "assets/icon.png").bytes.equals(readFileSync(join(root, "plugin-en/assets/icon.png"))));
   assert.ok(icon.bytes.equals(readFileSync(join(root, formIconPath))), "the form icon is the committed file, not a generated one");
 });
 
@@ -312,39 +312,46 @@ test("a package that fails its own rules builds nothing", () => {
   assert.ok(problems.some((p) => /the package check fails, so nothing is built/u.test(p) && /shortDescription is 31 characters/u.test(p)), JSON.stringify(problems));
 });
 
-test("the manifests come from one source, writing them again changes nothing, and a rename is one edit", () => {
+test("the manifests come from one source and the locale files, writing them again changes nothing, and a rename is one edit", () => {
   const source = readSource(root);
+  const files = generatedFiles(source);
 
   assert.deepEqual(manifestSyncProblems(root), []);
-  assert.deepEqual(Object.keys(buildManifests(source)).sort(), [...generatedFiles].sort());
+  assert.deepEqual(Object.keys(buildManifests(source, readLocales(root, source))).sort(), [...files].sort());
   const unchanged = withCopy(() => {}, (directory) => {
     writeManifests(directory);
-    return generatedFiles.every((file) => readFileSync(join(directory, file), "utf8") === readFileSync(join(root, file), "utf8"));
+    return files.every((file) => readFileSync(join(directory, file), "utf8") === readFileSync(join(root, file), "utf8"));
   });
   assert.equal(unchanged, true, "pnpm manifests is idempotent on the committed files");
 
-  // One edit renames the plugin everywhere: the source, then the generator, and the package rules are satisfied again.
-  const renamed = withCopy(editJson("plugin-source.json", (m) => { m.name = "wishlist-gifts"; m.marketplace.name = "wishlist-gifts-plugins"; }), (directory) => {
+  // One edit renames the main package everywhere: the source, then the generator, and the package rules are satisfied again.
+  const renamed = withCopy(editJson("plugin-source.json", (m) => { m.packages.uk.name = "wishlist-gifts"; m.marketplace.name = "wishlist-gifts-plugins"; }), (directory) => {
     assert.ok(manifestSyncProblems(directory).length >= 5, "before the generator runs every manifest is out of date");
     writeManifests(directory);
-    // The two server files hold the server's own name (`mcp.serverName`), not the plugin's; every other manifest names the plugin.
-    return { problems: checkPackage(directory), names: generatedFiles.filter((file) => !/mcp\.json$/u.test(file)).map((file) => JSON.stringify(JSON.parse(readFileSync(join(directory, file), "utf8")))) };
+    // The server files hold the server's own name (`mcp.serverName`), not the plugin's; the other manifests of the main package name the plugin.
+    return { problems: checkPackage(directory), names: files.filter((file) => /^plugin\//u.test(file) && !/mcp\.json$/u.test(file)).map((file) => JSON.stringify(JSON.parse(readFileSync(join(directory, file), "utf8")))) };
   });
 
   assert.deepEqual(renamed.problems, []);
   for (const text of renamed.names) assert.match(text, /wishlist-gifts/u);
-  assert.ok(!renamed.names.some((text) => /"name":"wishlist"[,}]/u.test(text)), "no manifest keeps the old name");
+  assert.ok(!renamed.names.some((text) => /"name":"wishlist"[,}]/u.test(text)), "no manifest of the main package keeps the old name");
+
+  // A locale file is part of the source too: a changed description is a change of every manifest of its package.
+  const reworded = withCopy(editJson("locales/uk.json", (m) => { m.description = "Інший опис."; }), (directory) => manifestSyncProblems(directory));
+  assert.ok(reworded.some((p) => /plugin\/plugin\.json differs/u.test(p)) && !reworded.some((p) => /plugin-en\//u.test(p)), JSON.stringify(reworded));
 
   const missing = withCopy((directory) => rmSync(join(directory, "plugin-source.json")), (directory) => checkPackage(directory));
   assert.ok(missing.some((p) => /plugin-source\.json is missing/u.test(p)), JSON.stringify(missing));
   const broken = withCopy((directory) => writeFileSync(join(directory, "plugin-source.json"), "{ nope"), (directory) => checkPackage(directory));
-  assert.ok(broken.some((p) => /plugin-source\.json is not valid JSON/u.test(p)), JSON.stringify(broken));
+  assert.ok(broken.some((p) => /missing or not valid JSON/u.test(p)), JSON.stringify(broken));
   const absent = withCopy((directory) => rmSync(join(directory, "plugin", ".mcp.json")), (directory) => checkPackage(directory));
   assert.ok(absent.some((p) => /plugin\/\.mcp\.json is missing/u.test(p)), JSON.stringify(absent));
+  const noLocale = withCopy((directory) => rmSync(join(directory, "locales", "en.json")), (directory) => checkPackage(directory));
+  assert.ok(noLocale.some((p) => /locale file it names is missing/u.test(p)), JSON.stringify(noLocale));
 });
 
 test("the listing fields of the committed manifests are inside OpenAI's final-submission limits, at the edge too", () => {
-  const listing = JSON.parse(readFileSync(join(root, "plugin/plugin.json"), "utf8")).extensions["com.openai"].interface;
+  const listing = JSON.parse(readFileSync(join(root, "plugin-en/plugin.json"), "utf8")).extensions["com.openai"].interface;
 
   assert.ok(listing.shortDescription.length <= 30, `${listing.shortDescription.length}`);
   assert.ok(listing.displayName.length <= 30);
@@ -353,7 +360,7 @@ test("the listing fields of the committed manifests are inside OpenAI's final-su
   assert.ok(listing.capabilities.length <= 20 && listing.capabilities.every((c) => c.length <= 120));
   assert.ok(listing.defaultPrompt.length <= 3 && listing.defaultPrompt.every((p) => p.length <= 128 && !p.includes("@")));
   // The limits themselves are inclusive: exactly 30, 30, 4000, 80, 20, 120, 3 and 128 pass.
-  const atTheEdge = withCopy(editJson("plugin/plugin.json", (m) => {
+  const atTheEdge = withCopy(editJson("plugin-en/plugin.json", (m) => {
     const l = m.extensions["com.openai"].interface;
     l.shortDescription = "s".repeat(30);
     l.displayName = "d".repeat(30);
@@ -363,7 +370,7 @@ test("the listing fields of the committed manifests are inside OpenAI's final-su
     l.defaultPrompt = ["a", "b", "c"].map((c) => c.repeat(128));
     m.extensions["com.openai"].publication.translations["uk-UA"].subtitle = "я".repeat(30);
     l.privacyPolicyURL = `https://domain-pending.invalid/${"x".repeat(993)}`; // 1024 characters: the edge passes, 1025 fails (tests/package.test.mjs)
-  }), (directory) => checkPackage(directory).filter((p) => !/differs/u.test(p) && !/generates/u.test(p)));
+  }), (directory) => checkPackage(directory).filter((p) => !/differs/u.test(p) && !/generate/u.test(p)));
 
   assert.deepEqual(atTheEdge, []);
 });
@@ -382,13 +389,15 @@ test("no file of the ZIP names Instagram, and the full skill still does", () => 
   }
   assert.ok(entries.some((e) => e.name === "skills/wishlist-add-photos/SKILL.md"), "the photo skill stays in the ZIP, without its Instagram part");
   // The README of the ZIP is the user's README, unchanged.
-  assert.equal(entries.find((e) => e.name === "README.md").bytes.toString("utf8"), readFileSync(join(root, "plugin/README.md"), "utf8"));
-  const full = readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8");
+  assert.equal(entries.find((e) => e.name === "README.md").bytes.toString("utf8"), readFileSync(join(root, "plugin-en/README.md"), "utf8"));
+  const full = readFileSync(join(root, "plugin-en/skills/wishlist-add-photos/SKILL.md"), "utf8");
+  const fullUk = readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8");
+  for (const word of ["Instagram", "cdninstagram", "fbcdn"]) assert.ok(fullUk.includes(word), `the Ukrainian full skill keeps ${word} too`);
   for (const word of ["Instagram", "cdninstagram", "fbcdn"]) assert.ok(full.includes(word), `plugin/skills must keep ${word} for Claude and Codex`);
   // The other skills are carried as they are, and the cut skill keeps its rules about pictures.
   for (const name of ["wishlist", "wishlist-add-from-links", "wishlist-price-check"]) {
     const inZip = entries.find((e) => e.name === `skills/${name}/SKILL.md`).bytes.toString("utf8");
-    assert.equal(inZip, readFileSync(join(root, "plugin/skills", name, "SKILL.md"), "utf8"), `${name} must not change in the ZIP`);
+    assert.equal(inZip, readFileSync(join(root, "plugin-en/skills", name, "SKILL.md"), "utf8"), `${name} must not change in the ZIP`);
   }
   const cut = entries.find((e) => e.name === "skills/wishlist-add-photos/SKILL.md").bytes.toString("utf8");
   for (const kept of ["## Which addresses count", "## Shape: prefer a wide picture", "Do not ask «add a photo?»", "## How far you go", "add_wish_photos", "Never uses Facebook, Pinterest or any page behind a login."]) assert.ok(cut.includes(kept), `the ZIP's photo skill must keep: ${kept}`);
@@ -408,7 +417,7 @@ test("no file of the ZIP names Instagram, and the full skill still does", () => 
   assert.doesNotMatch(seen, /\bor "from the shop's page"\s+or "from the shop's page"/u, "no duplicated clause");
 });
 
-test("there is one copy of each skill, and the claude and codex packages are not built from the ZIP variant", () => {
+test("there is one copy of each skill per language, and the packages are not built from the ZIP variant", () => {
   const found = [];
   const walk = (directory) => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -419,11 +428,11 @@ test("there is one copy of each skill, and the claude and codex packages are not
     }
   };
   walk(root);
-  assert.deepEqual(found.sort(), ["plugin/skills/wishlist-add-from-links/SKILL.md", "plugin/skills/wishlist-add-photos/SKILL.md", "plugin/skills/wishlist-price-check/SKILL.md", "plugin/skills/wishlist/SKILL.md"]);
+  assert.deepEqual(found.sort(), ["plugin-en/skills/wishlist-add-from-links/SKILL.md", "plugin-en/skills/wishlist-add-photos/SKILL.md", "plugin-en/skills/wishlist-price-check/SKILL.md", "plugin-en/skills/wishlist/SKILL.md", "plugin/skills/wishlist-add-from-links/SKILL.md", "plugin/skills/wishlist-add-photos/SKILL.md", "plugin/skills/wishlist-price-check/SKILL.md", "plugin/skills/wishlist/SKILL.md"]);
   // The committed payload (what Claude Code and Codex install) is untouched by the ZIP build.
-  const before = readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8");
+  const before = readFileSync(join(root, "plugin-en/skills/wishlist-add-photos/SKILL.md"), "utf8");
   build(root);
-  assert.equal(readFileSync(join(root, "plugin/skills/wishlist-add-photos/SKILL.md"), "utf8"), before);
+  assert.equal(readFileSync(join(root, "plugin-en/skills/wishlist-add-photos/SKILL.md"), "utf8"), before);
 });
 
 test("the cutter handles a block, an inline clause and a replacement, and refuses malformed markers and a moved description sentence", () => {

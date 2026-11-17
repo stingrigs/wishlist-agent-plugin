@@ -1,14 +1,17 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { extractLinks, isOwnRepositoryUrl, isPlaceholder, manifestUrls, payload, relativeLinkProblems } from "./lib.mjs";
+import { extractLinks, isOwnRepositoryUrl, isPlaceholder, manifestUrls, relativeLinkProblems } from "./lib.mjs";
+import { packagesOf, readSource } from "./manifests.mjs";
 
-// Every link of plugin/README.md and every policy or homepage URL of the manifests answers (the pages a reader of the plugin opens). Placeholders cannot answer and are listed, not fetched: the release check is what
+// Every link of the README of each package and every policy or homepage URL of the manifests answers (the pages a reader of the plugin opens). Placeholders cannot answer and are listed, not fetched: the release check is what
 // refuses them. Relative links must exist. A network failure of a real link fails the run (retried twice).
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const folder = join(root, payload);
-const links = extractLinks(readFileSync(join(folder, "README.md"), "utf8"));
-const problems = relativeLinkProblems(folder, links.relative);
+const source = readSource(root);
+const folders = packagesOf(source).map((pack) => join(root, pack.dir));
+const found = folders.map((folder) => ({ folder, links: extractLinks(readFileSync(join(folder, "README.md"), "utf8")) }));
+const links = { external: [...new Set(found.flatMap((entry) => entry.links.external))], relative: found.flatMap((entry) => entry.links.relative) };
+const problems = found.flatMap((entry) => relativeLinkProblems(entry.folder, entry.links.relative));
 
 async function answers(url) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -30,7 +33,7 @@ async function answers(url) {
 
 // The repository's own addresses are listed, not fetched: they point at files of the default branch (`blob/main/...`) that a
 // change not yet pushed may not have put there yet. The release check fetches nothing.
-const repository = JSON.parse(readFileSync(join(folder, "plugin.json"), "utf8")).repository;
+const repository = source.repository;
 
 for (const url of new Set([...links.external, ...manifestUrls(root)])) {
   if (isOwnRepositoryUrl(url, repository)) {

@@ -1,48 +1,58 @@
-# Wishlist for AI assistants
+# Wishlist для ШІ-асистентів
 
-Wishlist is a private wish list in Telegram. This plugin lets an AI assistant (Claude, Codex or ChatGPT) read and change
-**your own** wishes and collections when you ask it to.
+Wishlist — це приватний список бажань у Telegram. Цей плагін дає ШІ-асистентові (Claude, Codex або ChatGPT) змогу читати й
+змінювати **твої власні** бажання та добірки, коли ти про це просиш.
 
-## What you can ask
+## Що можна попросити
 
-- «Show my wishes.»
-- «Add a wish: a coffee grinder, with this link.»
-- «Put the coffee grinder in my Birthday collection.»
-- «Which of my wishes are not in any collection?»
-- «Archive the wish about the old headphones.»
+- «Покажи мої бажання.»
+- «Додай бажання: кавомолка, ось посилання.»
+- «Поклади кавомолку в мою добірку «День народження».»
+- «Які мої бажання ще не лежать у жодній добірці?»
+- «Заархівуй бажання про старі навушники.»
 
-This is an early version. You need Telegram, the [Wishlist bot](https://t.me/wishlist4ubot) and your account in it.
-Connecting is currently open to a limited group of people: if the bot refuses to connect you, you are probably not in the group
-yet, so write to the bot. The plugin is only configuration: it holds no code, no hooks and no secrets. The assistant talks to
-this address:
+Це рання версія. Тобі потрібні Telegram, [бот Wishlist](https://t.me/wishlist4ubot) і твій акаунт у ньому. Підключення зараз
+відкрите для обмеженого кола людей: якщо бот не дає тебе підключити, імовірно, тебе ще немає в цьому колі, тож напиши боту.
+Плагін — це лише налаштування: у ньому немає коду, хуків і секретів. Асистент звертається за такою адресою:
 
 ```text
 https://mcp.wishlist-bot.duckdns.org/mcp
 ```
 
-## Install
+## Встановлення
 
-The first sign-in sends you to the Wishlist bot, where you confirm the connection.
+Є два способи. **Плагін** — це підключення плюс навички: інструкції, які підказують асистентові, як працювати з твоїми бажаннями
+й добірками. **Просто адреса** — лише підключення, без навичок. Під час першого входу тебе буде перенаправлено до бота Wishlist,
+де ти підтверджуєш підключення.
 
 ### ChatGPT
 
-1. Open [ChatGPT Plugins](https://chatgpt.com/plugins), press the plus button and choose **Add custom MCP server**.
-2. Name: `Wishlist`. Under **Connection**, choose the public address (not **Tunnel**) and paste the address above as the **Server URL**.
-3. **Authentication**: choose **OAuth**. Do not choose «OAuth or no authentication»: ChatGPT then stops with «The MCP server denied access».
-4. Open the advanced OAuth settings: registration method **Client Identifier Metadata Document (CIMD)**, which is how ChatGPT
-   identifies itself to the server, and tick the default scopes (permissions) `wishlist:read` and `wishlist:write`.
-5. Tick **I understand and want to continue**, press **Create as a plugin**, then **Connect Wishlist**, and confirm in the Wishlist bot.
+1. Відкрий [ChatGPT Plugins](https://chatgpt.com/plugins), натисни плюс і вибери **Add custom MCP server**.
+2. **Name**: `Wishlist`. У розділі **Connection** обери публічну адресу (не **Tunnel**) і встав адресу вище в поле **Server URL**.
+3. **Authentication**: вибери **OAuth**. Не вибирай «OAuth or no authentication»: тоді ChatGPT зупиняється з повідомленням «The MCP server denied access».
+4. Відкрий розширені налаштування OAuth: спосіб реєстрації **Client Identifier Metadata Document (CIMD)** (так ChatGPT
+   представляється серверу) і познач типові області доступу (права) `wishlist:read` і `wishlist:write`.
+5. Познач **I understand and want to continue**, натисни **Create as a plugin**, потім **Connect Wishlist** і підтверди підключення в боті Wishlist.
 
-A step-by-step guide with the same steps is in
+Це лише підключення, без навичок. Покрокова інструкція з тими самими кроками — у
 [docs/chatgpt.md](https://github.com/stingrigs/wishlist-agent-plugin/blob/main/docs/chatgpt.md).
 
 ### Claude Code
+
+Плагін (підключення й навички):
+
+```bash
+claude plugin marketplace add stingrigs/wishlist-agent-plugin
+claude plugin install wishlist@wishlist-plugins
+```
+
+Лише підключення за адресою:
 
 ```bash
 claude mcp add --transport http --scope user wishlist https://mcp.wishlist-bot.duckdns.org/mcp
 ```
 
-Then run `/mcp` inside Claude Code and sign in to `wishlist`.
+Потім виконай `/mcp` у Claude Code і увійди до `wishlist`.
 
 ### Codex
 
@@ -51,25 +61,25 @@ codex mcp add wishlist --url https://mcp.wishlist-bot.duckdns.org/mcp
 codex mcp login wishlist
 ```
 
-## Safety and privacy
+## Безпека й приватність
 
-- The assistant works with your own wishes and collections. In a collection you own or co-author (one you share with people
-  who add their own wishes) it also reads the titles and descriptions of other people's wishes. What it reads goes to the AI
-  service you use.
-- It cannot delete anything for good, accept an invitation, or see likes or who liked.
-- A change that other people would see needs your confirmation in the assistant.
-- You confirm every connection in the Wishlist bot, and you can disconnect any time: **Settings, Connected apps** in the bot (the bot speaks Ukrainian, where they are «Налаштування» and «Підключені застосунки»).
-- The privacy notice and terms are not published yet; they will be linked here.
+- Асистент працює з твоїми власними бажаннями та добірками. У добірці, власником або співавтором якої ти є (ти ділишся нею з людьми,
+  які додають власні бажання), він також читає назви й описи чужих бажань. Усе, що він прочитав, потрапляє до ШІ-сервісу, яким
+  ти користуєшся.
+- Він не може нічого видалити назавжди, прийняти запрошення чи побачити вподобання й тих, хто вподобав.
+- Зміни, які побачать інші люди, потребують твого підтвердження в асистенті.
+- Кожне підключення ти підтверджуєш у боті Wishlist і можеш відключити будь-коли: **«⚙️ Налаштування» › «🔌 Підключені застосунки»** в боті.
+- Політику приватності й умови ще не опубліковано; посилання на них з’явиться тут.
 
-## If it does not work
+## Якщо не працює
 
-- The bot says «🔒 Підключення недоступне» (connection unavailable, in Ukrainian): the link lasts 10 minutes. Start connecting again. If it happens again, you may not be in the group that can connect yet: write to the bot.
-- The code in the bot differs from the code on the page: do not confirm. Cancel and start again.
-- ChatGPT says «The MCP server denied access»: check that **Authentication** is **OAuth**.
-- The assistant sees no wishlist tools after connecting: start a new chat.
-- Anything else: write to the [Wishlist bot](https://t.me/wishlist4ubot).
+- Бот пише «🔒 Підключення недоступне»: посилання діє 10 хвилин. Почни підключення знову. Якщо знову те саме, імовірно, тебе ще немає в колі, якому відкрите підключення: напиши боту.
+- Код у боті не збігається з кодом на сторінці: не підтверджуй. Скасуй і почни спочатку.
+- ChatGPT пише «The MCP server denied access»: перевір, що в **Authentication** вибрано **OAuth**.
+- Після підключення асистент не бачить інструментів Wishlist: почни нову розмову.
+- Усе інше: напиши [боту Wishlist](https://t.me/wishlist4ubot).
 
-## More
+## Ще
 
-MIT license (see `LICENSE`). The icon is the Wishlist mark and is not covered by the MIT license: do not reuse it for other
-products.
+Ліцензія MIT (див. `LICENSE`). Значок — знак Wishlist, на нього ліцензія MIT не поширюється: не використовуй його в інших
+продуктах.

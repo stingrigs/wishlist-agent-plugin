@@ -1,0 +1,24 @@
+{
+  "name": "wishlist-agent-plugin-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Checks for the wishlist agent plugin package (manifests, README, release). Not published; the plugin itself has no code.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test",
+    "manifests": "node scripts/manifests.mjs",
+    "check": "node scripts/check-package.mjs",
+    "package:chatgpt": "node scripts/package-chatgpt.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:release": "node scripts/check-release.mjs",
+    "validate:claude": "claude plugin validate --strict ./plugin && claude plugin validate --strict .claude-plugin/marketplace.json",
+    "verify": "pnpm test && pnpm check && pnpm package:chatgpt && pnpm validate:claude"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1"
+  },
+  "packageManager": "pnpm@11.16.0"
+}

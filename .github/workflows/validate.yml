@@ -1,0 +1,70 @@
+name: validate
+
+# what a client installs is the folder `plugin/`, manifests and a README, so CI checks exactly those: the Agent
+# Plugins 1.0 schemas, the package rules (one address everywhere, nothing outside the payload allowlist, no secret),
+# `claude plugin validate --strict` and the links of the README. A tag v<version> additionally runs the release check,
+# which refuses while a placeholder is left. A tag does not publish anything: a marketplace follows the default branch.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  schedule:
+    # Links rot even when nothing changes.
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enable Corepack for pnpm cache
+        run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Tests
+        run: pnpm test
+      - name: Package rules and Agent Plugins schemas
+        run: pnpm check
+      # Pinned to an exact version. Its install script
+      # (postinstall) puts the native binary in place: without it `claude` is a stub that exits 1, so scripts must run.
+      - name: Install the Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.311
+      - name: Validate the plugin and the Claude marketplace (strict)
+        run: pnpm validate:claude
+      - name: Links in the README
+        run: pnpm check:links
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Enable Corepack
+        run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      # The release check runs the package rules, which load the schema validator: dependencies are needed.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: The tagged commit is on the default branch
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Refuse a release with a placeholder or a version that is not the tag
+        run: node scripts/check-release.mjs "$GITHUB_REF_NAME"

@@ -1,0 +1,15 @@
+{
+  "name": "wishlist-plugins",
+  "description": "The Wishlist plugin for Claude Code",
+  "owner": {
+    "name": "Wishlist Bot",
+    "url": "https://t.me/wishlist4ubot"
+  },
+  "plugins": [
+    {
+      "name": "wishlist",
+      "source": "./plugin",
+      "description": "Connects an AI assistant to your private Wishlist catalog in Telegram: list, add and organise your own wishes and collections. Sign-in is confirmed in the bot."
+    }
+  ]
+}

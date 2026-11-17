@@ -1,0 +1,20 @@
+{
+  "name": "wishlist-plugins",
+  "interface": {
+    "displayName": "Wishlist"
+  },
+  "plugins": [
+    {
+      "name": "wishlist",
+      "source": {
+        "source": "local",
+        "path": "./plugin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
